@@ -1,0 +1,123 @@
+'Relies on MS Office VBA. You may need to enable-msscript.ocx, scrrun.dll, scrobj.dll
+
+Public Sub MapThatDCF()
+
+Dim FilePath As String
+Dim ThatDCF As Workbook
+Dim aSheet As Worksheet
+Dim OutRow As Integer
+OutRow = 3
+Dim AllCount As Integer
+AllCount = 0
+
+FilePath = Application.GetOpenFilename
+Set ThatDCF = Workbooks.Open(FilePath)
+Application.ScreenUpdating = False
+
+For Each aSheet In ThatDCF.Worksheets:
+    aSheet.Activate
+    Application.StatusBar = "Working on " & aSheet.Name
+    
+    For Each c In aSheet.Range("A1:AN500"):
+        If c.MergeCells = True Then
+            If c.Locked = False Then
+            Workbooks("MapThatDCF.xlsm").Worksheets(1).Cells(OutRow, 2).Value = c.Address(RowAbsolute:=False, ColumnAbsolute:=False)
+            Workbooks("MapThatDCF.xlsm").Worksheets(1).Cells(OutRow, 1).Value = aSheet.Name
+            
+            Workbooks("MapThatDCF.xlsm").Worksheets(1).Cells(OutRow, 4).Value = ReadQs(c.Row, c.Column)
+            OutRow = OutRow + 1
+            AllCount = AllCount + 1
+            c.MergeArea.Locked = True
+            End If
+        Else
+            If c.Locked = False Then
+            Workbooks("MapThatDCF.xlsm").Worksheets(1).Cells(OutRow, 2).Value = c.Address(RowAbsolute:=False, ColumnAbsolute:=False)
+            Workbooks("MapThatDCF.xlsm").Worksheets(1).Cells(OutRow, 1).Value = aSheet.Name
+            Workbooks("MapThatDCF.xlsm").Worksheets(1).Cells(OutRow, 4).Value = ReadQs(c.Row, c.Column)
+            OutRow = OutRow + 1
+            AllCount = AllCount + 1
+            End If
+        End If
+    Next c
+    Next aSheet
+
+ThatDCF.Close False
+Application.ScreenUpdating = True
+Application.StatusBar = False
+UserForm1.Label1.Caption = "Mapping completed. You saved " & Round(AllCount * 0.5, 1) & " minutes."
+UserForm1.Show
+
+End Sub
+
+Private Function ReadQs(ByVal cRow As Integer, ByVal cCol As Integer) As String
+Dim LeftText As String
+Dim UpText As String
+Dim RightText As String
+ReadQs = ""
+
+LeftText = ReadLeft(cRow, cCol)
+UpText = ReadUp(cRow, cCol)
+RightText = ReadRight(cRow, cCol)
+
+ReadQs = LeftText & "_" & UpText
+
+If Len(RightText) > 0 Then
+    ReadQs = RightText & "_" & UpText
+    Exit Function
+End If
+   
+End Function
+
+Private Function ReadLeft(ByVal cRow As Integer, ByVal cCol As Integer) As String
+Dim LeftMax As Integer
+Dim x As Integer
+x = 1
+LeftMax = cCol
+ReadLeft = ""
+
+While x < LeftMax:
+    If IsEmpty(ActiveSheet.Cells(cRow, cCol - x)) = True Then
+        x = x + 1
+    Else
+        ReadLeft = ActiveSheet.Cells(cRow, cCol - x).Value
+        Exit Function
+    End If
+Wend
+
+End Function
+
+Private Function ReadUp(ByVal cRow As Integer, ByVal cCol As Integer) As String
+Dim UpMax As Integer
+Dim x As Integer
+x = 1
+UpMax = cRow
+ReadUp = ""
+
+While x < UpMax:
+    If ActiveSheet.Cells(cRow - x, cCol).MergeCells = True Then
+        If IsEmpty(ActiveSheet.Cells(cRow - x, cCol).MergeArea.Cells(1, 1)) = True Then
+            x = x + 1
+        Else
+            ReadUp = ActiveSheet.Cells(cRow - x, cCol).MergeArea.Cells(1, 1).Value
+            Exit Function
+        End If
+    Else
+        If IsEmpty(ActiveSheet.Cells(cRow - x, cCol)) = True Then
+            x = x + 1
+        Else
+            ReadUp = ActiveSheet.Cells(cRow - x, cCol).Value
+            Exit Function
+        End If
+    End If
+Wend
+
+End Function
+
+Private Function ReadRight(ByVal cRow As Integer, ByVal cCol As Integer) As String
+ReadRight = ""
+
+If IsEmpty(ActiveSheet.Cells(cRow, cCol + 1)) = False Then
+    ReadRight = ActiveSheet.Cells(cRow, cCol + 1).Value
+End If
+
+End Function
