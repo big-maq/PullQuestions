@@ -1,2 +1,2 @@
 # PullQuestions
-Pull questions and the answer cells in an excel form
+Pull questions and the answer cells from a form made on excel sheet.
